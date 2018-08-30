@@ -22,8 +22,10 @@ public class ParseqTest {
         .setTimerScheduler(timerScheduler)
         .build();
 
-    final Task<String> googleContentType = getContentType("http://www.google.com");
-    final Task<String> bingContentType = getContentType("http://www.bing.com");
+    Thread.sleep(30000);
+
+    final Task<String> googleContentType = getContentType("http://www.google.com", 60000);
+    final Task<String> bingContentType = getContentType("http://www.bing.com", 60000);
 
     final Task<String> contentTypes = Task.par(googleContentType, bingContentType)
         .map("concatenate", (google, bing) -> "Google:" + google + "\n" + "Bing: " + bing + "\n")
@@ -32,13 +34,17 @@ public class ParseqTest {
     engine.run(contentTypes);
 
     engine.shutdown();
-    engine.awaitTermination(1, TimeUnit.SECONDS);
+    engine.awaitTermination(10, TimeUnit.MINUTES);
     taskScheduler.shutdown();
     timerScheduler.shutdown();
+    System.exit(0);
   }
 
-  private static Task<String> getContentType(String url) {
+  private static Task<String> getContentType(String url, final long time) {
     return HttpClient.get(url).task()
-        .map("getContentType", response -> response.getContentType());
+        .map("getContentType", response -> {
+          Thread.sleep(time);
+          return response.getContentType();
+        });
   }
 }
